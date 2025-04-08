@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CustomVerticalProgressBar">
+        <attr name="cvp_backgroundLineWidth" format="dimension" />
+        <attr name="cvp_backgroundColor" format="color" />
+        <attr name="cvp_progressCornerRadius" format="dimension" />
+        <attr name="cvp_FirstColor" format="color" />
+        <attr name="cvp_SecondColor" format="color" />
+        <attr name="cvp_ThirdColor" format="color" />
+        <attr name="cvp_FirstZonePercentage" format="float" />
+        <attr name="cvp_SecondZonePercentage" format="float" />
+        <!-- New attribute for max progress -->
+        <attr name="cvp_max" format="integer" />
+    </declare-styleable>
+</resources>
