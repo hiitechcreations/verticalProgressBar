@@ -1,4 +1,4 @@
-package com.hiitech.playme
+package com.hiitech.progressbar
 
 import android.content.Context
 import android.graphics.*
