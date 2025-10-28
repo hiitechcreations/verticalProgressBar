@@ -12,4 +12,18 @@
         <!-- New attribute for max progress -->
         <attr name="cvp_max" format="integer" />
     </declare-styleable>
+
+    <declare-styleable name="CustomSeekBar">
+        <attr name="barColor" format="color" />
+        <attr name="progressColor" format="color" />
+        <attr name="thumbColor" format="color" />
+        <attr name="textColor" format="color" />
+        <attr name="dotColor" format="color" />
+        <attr name="dotAlpha" format="integer" />
+        <attr name="barHeight" format="dimension" />
+        <attr name="thumbRadius" format="dimension" />
+        <attr name="textSize" format="dimension" />
+        <attr name="showDots" format="boolean" />
+        <attr name="showLabels" format="boolean" />
+    </declare-styleable>
 </resources>
