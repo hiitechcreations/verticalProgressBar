@@ -37,7 +37,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     var purpleZonePercentage: Float = 0.5f
     var yellowZonePercentage: Float = 0.25f
 
-    var max: Int = 32
+    var max: Int = 200
     set(value) {
         field = value.coerceAtLeast(1)   // zero ya negative kabhi mat allow karo
         progress = progress.coerceIn(0, field)  // progress adjust ho jaye
