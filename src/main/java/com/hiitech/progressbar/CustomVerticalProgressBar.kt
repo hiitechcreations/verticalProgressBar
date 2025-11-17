@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.withClip
 
 class CustomVerticalProgressBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = 0
@@ -108,7 +109,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
         style = Paint.Style.FILL
         color = trackColor
     }
-    
+
     // Re-usable objects to avoid allocation in onDraw
     private val progressRect = RectF()
     private val progressPath = Path()
@@ -117,7 +118,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     // Shaders for gradients
     private var zone1to2Shader: LinearGradient? = null
     private var zone2to3Shader: LinearGradient? = null
-    
+
     // Cached values to check if shaders need recalculation
     private var cacheZone1Y = -1f
     private var cacheZone2Y = -1f
@@ -168,7 +169,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
                     R.styleable.CustomVerticalProgressBar_cvp_zone2Threshold,
                     defaultZone2Threshold
                 )
-                
+
                 // Set initial max and progress from XML if available
                 maxValue = getInt(
                     R.styleable.CustomVerticalProgressBar_cvp_maxValue,
@@ -261,7 +262,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
             }
         }
     }
-    
+
     /** Caches the shader to avoid creating a new one if params are the same */
     private fun updateShader1(yStart: Float, yEnd: Float) {
         if (yStart != cacheZone1Y || yEnd != cacheFilledTop) {
@@ -274,7 +275,7 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
             )
         }
     }
-    
+
     /** Caches the shader to avoid creating a new one if params are the same */
     private fun updateShader2(yStart: Float, yEnd: Float) {
         if (yStart != cacheZone2Y || yEnd != cacheFilledTop) {
