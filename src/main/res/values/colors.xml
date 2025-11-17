@@ -3,4 +3,9 @@
     <color name="yellow">#FFFFD600</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="red">#FF0000</color>
+
+     <!-- WaveSeekBar colors -->
+    <color name="dark_gray_for_seekBar">#A0A0A0</color> <!-- jo color tum use karte ho -->
+    <color name="black">#000000</color>
+
 </resources>
