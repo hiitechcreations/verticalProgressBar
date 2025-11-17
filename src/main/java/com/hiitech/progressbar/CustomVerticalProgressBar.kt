@@ -37,8 +37,13 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     var purpleZonePercentage: Float = 0.5f
     var yellowZonePercentage: Float = 0.25f
 
-    // Maximum progress is fixed at 32 by default, but can be set via XML.
     var max: Int = 32
+    set(value) {
+        field = value.coerceAtLeast(1)   // zero ya negative kabhi mat allow karo
+        progress = progress.coerceIn(0, field)  // progress adjust ho jaye
+        invalidate()
+    }
+
 
     var progress: Int = 0
         set(value) {
