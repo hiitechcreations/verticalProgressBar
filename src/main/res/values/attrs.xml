@@ -1,62 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="CustomVerticalProgressBar">
-    <!-- ... (existing attributes) ... -->
-    <attr name="cvp_backgroundColor" format="color" />
-    <attr name="cvp_backgroundLineWidth" format="dimension" />
-    <attr name="cvp_progressCornerRadius" format="dimension" />
-
-    <!-- NEW: Zone Colors -->
-    <attr name="cvp_zone1Color" format="color" />
-    <attr name="cvp_zone2Color" format="color" />
-    <attr name="cvp_zone3Color" format="color" />
-
-    <!-- NEW: Zone Thresholds (as integers) -->
-    <attr name="cvp_zone1Threshold" format="integer" />
-    <attr name="cvp_zone2Threshold" format="integer" />
-
-    <!-- NEW: Max and Progress -->
-    <attr name="cvp_maxValue" format="integer" />
-    <attr name="cvp_progressValue" format="integer" />
-</declare-styleable>
-    <declare-styleable name="CustomSeekBar">
-        <attr name="barColor" format="color" />
-        <attr name="progressColor" format="color" />
-        <attr name="thumbColor" format="color" />
-        <attr name="textColor" format="color" />
-        <attr name="dotColor" format="color" />
-        <attr name="dotAlpha" format="integer" />
-        <attr name="barHeight" format="dimension" />
-        <attr name="thumbRadius" format="dimension" />
-        <attr name="textSize" format="dimension" />
-        <attr name="showDots" format="boolean" />
-        <attr name="showLabels" format="boolean" />
+     <declare-styleable name="CustomVerticalProgressBar">
+        <attr name="cvp_backgroundColor" format="color" />
+        <attr name="cvp_backgroundLineWidth" format="dimension" />
+        <attr name="cvp_progressCornerRadius" format="dimension" />
+        <attr name="cvp_zone1Color" format="color" />
+        <attr name="cvp_zone2Color" format="color" />
+        <attr name="cvp_zone3Color" format="color" />
+        <attr name="cvp_zone1Threshold" format="integer" />
+        <attr name="cvp_zone2Threshold" format="integer" />
+        <attr name="cvp_maxValue" format="integer" />
+        <attr name="cvp_progressValue" format="integer" />
     </declare-styleable>
 
-     <declare-styleable name="WaveSeekBar">
-
-        <!-- Progress -->
+    <declare-styleable name="WaveSeekBar">
+        <attr name="wsb_waveAmplitude" format="dimension" />
+        <attr name="wsb_waveWavelength" format="dimension" />
+        <attr name="wsb_waveStrokeWidth" format="dimension" />
+        <attr name="wsb_thumbWidth" format="dimension" />
+        <attr name="wsb_thumbHeight" format="dimension" />
+        <attr name="wsb_trackColor" format="color" />
+        <attr name="wsb_waveColor" format="color" />
+        <attr name="wsb_thumbColor" format="color" />
         <attr name="wsb_max" format="integer" />
         <attr name="wsb_progress" format="integer" />
+    </declare-styleable>
 
-        <!-- Wave settings -->
+    <declare-styleable name="WaveSeekBar">
+        <attr name="wsb_max" format="integer" />
+        <attr name="wsb_progress" format="integer" />
         <attr name="wsb_waveAmplitude" format="float" />
         <attr name="wsb_waveWavelength" format="float" />
         <attr name="wsb_waveSpeed" format="float" />
         <attr name="wsb_waveColor" format="color" />
         <attr name="wsb_waveStrokeWidth" format="float" />
-
-        <!-- Track -->
         <attr name="wsb_trackColor" format="color" />
         <attr name="wsb_trackStrokeWidth" format="float" />
-
-        <!-- Thumb -->
         <attr name="wsb_thumbColor" format="color" />
         <attr name="wsb_thumbWidth" format="float" />
         <attr name="wsb_thumbHeight" format="float" />
         <attr name="wsb_thumbRadius" format="float" />
-
-        <!-- General -->
         <attr name="wsb_enableWave" format="boolean" />
     </declare-styleable>
     
