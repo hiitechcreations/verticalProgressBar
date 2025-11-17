@@ -1,4 +1,4 @@
-package com.hiitech.playme
+package com.hiitech.progressbar
 
 import android.animation.ValueAnimator
 import android.content.Context
