@@ -14,7 +14,6 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    // ===== DEFAULTS =====
     private val defaultBackgroundLineWidth = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics
     )
@@ -22,7 +21,6 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
         TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics
     )
 
-    // ===== STYLEABLE ATTRS =====
     var trackColor: Int = Color.WHITE
     var backgroundLineWidth: Float = defaultBackgroundLineWidth
     var progressCornerRadius: Float = defaultProgressCornerRadius
@@ -34,8 +32,8 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     var purpleZonePercentage: Float = 0.5f
     var yellowZonePercentage: Float = 0.25f
 
-    // ===== INTERNAL VALUES (safe, conflict-free) =====
-    var maxValue: Int = 32
+    // 👉 DEFAULT CHANGED → NO MORE 32 LOCK
+    var maxValue: Int = 100
         set(value) {
             field = value.coerceAtLeast(1)
             progressValue = progressValue.coerceIn(0, field)
@@ -94,18 +92,13 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
                     R.styleable.CustomVerticalProgressBar_cvp_SecondZonePercentage,
                     yellowZonePercentage
                 )
-
-                // XML MAX → only initial load
-                val xmlMax = getInt(R.styleable.CustomVerticalProgressBar_cvp_max, -1)
-
-                maxValue = if (xmlMax > 0) xmlMax else 32
             }
         }
 
         backgroundPaint.color = trackColor
     }
 
-    // ===================== DRAWING ==========================
+    // ================= DRAW ==================
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -113,7 +106,6 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
         val fullWidth = width.toFloat()
         val fullHeight = height.toFloat()
 
-        // Draw background line
         val trackLeft = (fullWidth - backgroundLineWidth) / 2f
         val trackRight = trackLeft + backgroundLineWidth
 
