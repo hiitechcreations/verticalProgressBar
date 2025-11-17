@@ -7,14 +7,14 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.withClip
 import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.withClip
 
 class CustomVerticalProgressBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    // Default dimensions (in pixels)
+    // ===== DEFAULTS =====
     private val defaultBackgroundLineWidth = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics
     )
@@ -22,8 +22,8 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
         TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics
     )
 
-    // Attributes (customizable via XML)
-    var trackColor: Int = Color.WHITE  // Renamed from backgroundColor
+    // ===== STYLEABLE ATTRS =====
+    var trackColor: Int = Color.WHITE
     var backgroundLineWidth: Float = defaultBackgroundLineWidth
     var progressCornerRadius: Float = defaultProgressCornerRadius
 
@@ -31,162 +31,164 @@ class CustomVerticalProgressBar @JvmOverloads constructor(
     var yellowColor: Int = ContextCompat.getColor(context, R.color.yellow)
     var redColor: Int = ContextCompat.getColor(context, R.color.red)
 
-    // Zone percentages (for max progress):
-    // Default: purple zone = 50% (0-16), yellow zone = 25% (16-24)
-    // red zone automatically = remaining 25% (24-32) if max is 32
     var purpleZonePercentage: Float = 0.5f
     var yellowZonePercentage: Float = 0.25f
 
-    var max: Int = 200
-    set(value) {
-        field = value.coerceAtLeast(1)   // zero ya negative kabhi mat allow karo
-        progress = progress.coerceIn(0, field)  // progress adjust ho jaye
-        invalidate()
-    }
-
-
-    var progress: Int = 0
+    // ===== INTERNAL VALUES (safe, conflict-free) =====
+    var maxValue: Int = 32
         set(value) {
-            field = value.coerceIn(0, max)
+            field = value.coerceAtLeast(1)
+            progressValue = progressValue.coerceIn(0, field)
             invalidate()
         }
 
-    // Paint objects
-    private val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-    }
-    private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = trackColor
-    }
+    var progressValue: Int = 0
+        set(value) {
+            field = value.coerceIn(0, maxValue)
+            invalidate()
+        }
+
+    private val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
     init {
         if (attrs != null) {
             context.withStyledAttributes(attrs, R.styleable.CustomVerticalProgressBar) {
+
                 backgroundLineWidth = getDimension(
                     R.styleable.CustomVerticalProgressBar_cvp_backgroundLineWidth,
                     defaultBackgroundLineWidth
                 )
-                trackColor =
-                    getColor(R.styleable.CustomVerticalProgressBar_cvp_backgroundColor, Color.WHITE)
+
+                trackColor = getColor(
+                    R.styleable.CustomVerticalProgressBar_cvp_backgroundColor,
+                    Color.WHITE
+                )
+
                 progressCornerRadius = getDimension(
                     R.styleable.CustomVerticalProgressBar_cvp_progressCornerRadius,
                     defaultProgressCornerRadius
                 )
-                purpleColor =
-                    getColor(R.styleable.CustomVerticalProgressBar_cvp_FirstColor, purpleColor)
-                yellowColor =
-                    getColor(R.styleable.CustomVerticalProgressBar_cvp_SecondColor, yellowColor)
-                redColor = getColor(R.styleable.CustomVerticalProgressBar_cvp_ThirdColor, redColor)
+
+                purpleColor = getColor(
+                    R.styleable.CustomVerticalProgressBar_cvp_FirstColor,
+                    purpleColor
+                )
+
+                yellowColor = getColor(
+                    R.styleable.CustomVerticalProgressBar_cvp_SecondColor,
+                    yellowColor
+                )
+
+                redColor = getColor(
+                    R.styleable.CustomVerticalProgressBar_cvp_ThirdColor,
+                    redColor
+                )
+
                 purpleZonePercentage = getFloat(
                     R.styleable.CustomVerticalProgressBar_cvp_FirstZonePercentage,
                     purpleZonePercentage
                 )
+
                 yellowZonePercentage = getFloat(
                     R.styleable.CustomVerticalProgressBar_cvp_SecondZonePercentage,
                     yellowZonePercentage
                 )
-                max = getInt(R.styleable.CustomVerticalProgressBar_cvp_max, 32)
+
+                // XML MAX → only initial load
+                val xmlMax = getInt(R.styleable.CustomVerticalProgressBar_cvp_max, -1)
+
+                maxValue = if (xmlMax > 0) xmlMax else 32
             }
-            backgroundPaint.color = trackColor
         }
+
+        backgroundPaint.color = trackColor
     }
 
+    // ===================== DRAWING ==========================
     @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         val fullWidth = width.toFloat()
         val fullHeight = height.toFloat()
 
-        // ===== Draw the Background Track (White Vertical Line) =====
+        // Draw background line
         val trackLeft = (fullWidth - backgroundLineWidth) / 2f
         val trackRight = trackLeft + backgroundLineWidth
-        val backgroundRect = RectF(trackLeft, 0f, trackRight, fullHeight)
-        canvas.drawRoundRect(backgroundRect, backgroundLineWidth / 2f, backgroundLineWidth / 2f, backgroundPaint)
 
-        // ===== Draw the Progress Fill Over the Track =====
-        if (progress > 0) {
-            val progressRatio = progress.toFloat() / max
-            val filledHeight = fullHeight * progressRatio
-            val filledTop = fullHeight - filledHeight
+        canvas.drawRoundRect(
+            RectF(trackLeft, 0f, trackRight, fullHeight),
+            backgroundLineWidth / 2f,
+            backgroundLineWidth / 2f,
+            backgroundPaint
+        )
 
-            // Create a progress rectangle covering full view width with rounded corners.
-            val progressRect = RectF(0f, filledTop, fullWidth, fullHeight)
-            val progressPath = Path().apply {
-                addRoundRect(progressRect, progressCornerRadius, progressCornerRadius, Path.Direction.CW)
-            }
-            canvas.withClip(progressPath) {
-                if (max <= 16) {
-                    // For brightness progress (max == 16), draw a pure purple fill.
-                    drawRect(
-                        0f,
-                        filledTop,
-                        fullWidth,
-                        fullHeight,
-                        Paint().apply { color = purpleColor })
-                } else {
-                    // For other cases (e.g. volume, max > 16), use segmented color fill:
-                    // Calculate vertical boundaries based on zone percentages.
-                    val purpleBoundaryY =
-                        fullHeight * (1 - purpleZonePercentage)  // bottom zone for purple
-                    val yellowBoundaryY =
-                        fullHeight * (1 - (purpleZonePercentage + yellowZonePercentage))
-                    when {
-                        // If progress fill is entirely in the purple zone.
-                        filledTop >= purpleBoundaryY -> {
-                            drawRect(
-                                0f,
-                                filledTop,
-                                fullWidth,
-                                fullHeight,
-                                Paint().apply { color = purpleColor })
-                        }
-                        // If progress extends into the yellow zone (but not into red zone)
-                        filledTop in yellowBoundaryY..purpleBoundaryY -> {
-                            drawRect(
-                                0f,
-                                purpleBoundaryY,
-                                fullWidth,
-                                fullHeight,
-                                Paint().apply { color = purpleColor })
-                            val shader = LinearGradient(
-                                0f, purpleBoundaryY,
+        if (progressValue <= 0) return
+
+        val progressRatio = progressValue.toFloat() / maxValue
+        val filledHeight = fullHeight * progressRatio
+        val filledTop = fullHeight - filledHeight
+
+        val progressRect = RectF(0f, filledTop, fullWidth, fullHeight)
+        val progressPath = Path().apply {
+            addRoundRect(progressRect, progressCornerRadius, progressCornerRadius, Path.Direction.CW)
+        }
+
+        canvas.withClip(progressPath) {
+
+            if (maxValue <= 16) {
+                drawRect(0f, filledTop, fullWidth, fullHeight,
+                    Paint().apply { color = purpleColor })
+            } else {
+
+                val purpleY = fullHeight * (1 - purpleZonePercentage)
+                val yellowY = fullHeight * (1 - (purpleZonePercentage + yellowZonePercentage))
+
+                when {
+                    filledTop >= purpleY -> {
+                        drawRect(
+                            0f, filledTop, fullWidth, fullHeight,
+                            Paint().apply { color = purpleColor }
+                        )
+                    }
+
+                    filledTop in yellowY..purpleY -> {
+
+                        drawRect(0f, purpleY, fullWidth, fullHeight,
+                            Paint().apply { color = purpleColor })
+
+                        progressPaint.shader = LinearGradient(
+                            0f, purpleY,
+                            0f, filledTop,
+                            purpleColor, yellowColor,
+                            Shader.TileMode.CLAMP
+                        )
+
+                        drawRect(0f, filledTop, fullWidth, purpleY, progressPaint)
+                    }
+
+                    else -> {
+
+                        drawRect(0f, purpleY, fullWidth, fullHeight,
+                            Paint().apply { color = purpleColor })
+
+                        progressPaint.shader = LinearGradient(
+                            0f, purpleY,
+                            0f, yellowY,
+                            purpleColor, yellowColor,
+                            Shader.TileMode.CLAMP
+                        )
+                        drawRect(0f, yellowY, fullWidth, purpleY, progressPaint)
+
+                        if (filledTop < yellowY) {
+                            progressPaint.shader = LinearGradient(
+                                0f, yellowY,
                                 0f, filledTop,
-                                purpleColor,
-                                yellowColor,
+                                yellowColor, redColor,
                                 Shader.TileMode.CLAMP
                             )
-                            progressPaint.shader = shader
-                            drawRect(0f, filledTop, fullWidth, purpleBoundaryY, progressPaint)
-                        }
-                        // If progress extends into the red zone.
-                        else -> {
-                            drawRect(
-                                0f,
-                                purpleBoundaryY,
-                                fullWidth,
-                                fullHeight,
-                                Paint().apply { color = purpleColor })
-                            val shaderPurpleYellow = LinearGradient(
-                                0f, purpleBoundaryY,
-                                0f, yellowBoundaryY,
-                                purpleColor,
-                                yellowColor,
-                                Shader.TileMode.CLAMP
-                            )
-                            progressPaint.shader = shaderPurpleYellow
-                            drawRect(0f, yellowBoundaryY, fullWidth, purpleBoundaryY, progressPaint)
-                            if (filledTop < yellowBoundaryY) {
-                                val shaderYellowRed = LinearGradient(
-                                    0f, yellowBoundaryY,
-                                    0f, filledTop,
-                                    yellowColor,
-                                    redColor,
-                                    Shader.TileMode.CLAMP
-                                )
-                                progressPaint.shader = shaderYellowRed
-                                drawRect(0f, filledTop, fullWidth, yellowBoundaryY, progressPaint)
-                            }
+                            drawRect(0f, filledTop, fullWidth, yellowY, progressPaint)
                         }
                     }
                 }
