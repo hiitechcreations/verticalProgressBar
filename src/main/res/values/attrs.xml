@@ -13,19 +13,6 @@
         <attr name="cvp_progressValue" format="integer" />
     </declare-styleable>
 
-    <declare-styleable name="WaveSeekBar">
-        <attr name="wsb_waveAmplitude" format="dimension" />
-        <attr name="wsb_waveWavelength" format="dimension" />
-        <attr name="wsb_waveStrokeWidth" format="dimension" />
-        <attr name="wsb_thumbWidth" format="dimension" />
-        <attr name="wsb_thumbHeight" format="dimension" />
-        <attr name="wsb_trackColor" format="color" />
-        <attr name="wsb_waveColor" format="color" />
-        <attr name="wsb_thumbColor" format="color" />
-        <attr name="wsb_max" format="integer" />
-        <attr name="wsb_progress" format="integer" />
-    </declare-styleable>
-
     <declare-styleable name="CustomSeekBar">
         <attr name="barColor" format="color" />
         <attr name="progressColor" format="color" />
@@ -39,5 +26,28 @@
         <attr name="showDots" format="boolean" />
         <attr name="showLabels" format="boolean" />
     </declare-styleable>
+
+       <declare-styleable name="WaveSeekBar">
+        <!-- Dimensions -->
+        <attr name="wsb_strokeWidth" format="dimension"/>
+        <attr name="wsb_thumbWidth" format="dimension"/>
+        <attr name="wsb_thumbHeight" format="dimension"/>
+
+        <!-- Wave -->
+        <attr name="wsb_baseAmplitude" format="float"/>
+        <attr name="wsb_wavelength" format="dimension"/>
+        <attr name="wsb_waveEnabled" format="boolean"/>
+        <attr name="wsb_waveDuration" format="integer"/>
+
+        <!-- Colors -->
+        <attr name="wsb_bgColor" format="color"/>
+        <attr name="wsb_fgColor" format="color"/>
+        <attr name="wsb_thumbColor" format="color"/>
+
+        <!-- Progress -->
+        <attr name="wsb_max" format="integer"/>
+        <attr name="wsb_progress" format="integer"/>
+    </declare-styleable>
+     
     
 </resources>
