@@ -7,9 +7,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
-import kotlin.math.*
-import androidx.core.graphics.toColorInt
 import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.toColorInt
+import com.hiitech.playme.R
+import kotlin.math.*
 
 class WaveSeekBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -28,6 +29,7 @@ class WaveSeekBar @JvmOverloads constructor(
     private val DEFAULT_THUMB_COLOR = Color.BLACK
     private val DEFAULT_MAX = 100
     private val DEFAULT_PROGRESS = 0
+    private val DEFAULT_WAVE_SPEED = 0.08f   // NEW: default speed
 
     // === CONFIG (populated from attrs) ===
     var baseAmplitude = DEFAULT_BASE_AMPLITUDE
@@ -37,6 +39,7 @@ class WaveSeekBar @JvmOverloads constructor(
     var thumbHeight = dpToPx(DEFAULT_THUMB_HEIGHT_DP)
     var waveDuration = DEFAULT_WAVE_DURATION
     var isWaveEnabled = DEFAULT_WAVE_ENABLED
+    private var waveSpeed = DEFAULT_WAVE_SPEED   // NEW: speed field
 
     // colors
     private var bgColor = DEFAULT_BG_COLOR
@@ -118,13 +121,18 @@ class WaveSeekBar @JvmOverloads constructor(
                 isWaveEnabled =
                     getBoolean(R.styleable.WaveSeekBar_wsb_waveEnabled, DEFAULT_WAVE_ENABLED)
 
+                // NEW: read waveSpeed from XML
+                waveSpeed = getFloat(
+                    R.styleable.WaveSeekBar_wsb_waveSpeed,
+                    DEFAULT_WAVE_SPEED
+                )
+
                 bgColor = getColor(R.styleable.WaveSeekBar_wsb_bgColor, DEFAULT_BG_COLOR)
                 fgColor = getColor(R.styleable.WaveSeekBar_wsb_fgColor, DEFAULT_FG_COLOR)
                 thumbColor = getColor(R.styleable.WaveSeekBar_wsb_thumbColor, DEFAULT_THUMB_COLOR)
 
                 _max = getInt(R.styleable.WaveSeekBar_wsb_max, DEFAULT_MAX)
                 _progress = getInt(R.styleable.WaveSeekBar_wsb_progress, DEFAULT_PROGRESS)
-
             }
         }
 
@@ -137,7 +145,7 @@ class WaveSeekBar @JvmOverloads constructor(
 
         thumbPaint.color = thumbColor
 
-        // if wave enabled and progress > 0, start animation
+        // if wave enabled, start animation
         if (isWaveEnabled) startWaveAnimator()
         currentAmplitude = if (isWaveRunning) baseAmplitude else 0f
     }
@@ -184,13 +192,17 @@ class WaveSeekBar @JvmOverloads constructor(
         createWavePath(fgPath, progressX, centerY)
         canvas.drawPath(fgPath, fgPaint)
 
-        // Draw thumb
+        // Draw thumb — FIX: progress 0 pe thumb aadha na dikhe
         val halfThumbW = thumbWidth / 2
         val halfThumbH = thumbHeight / 2
+
+        // NEW: clamp centerX so thumb fully visible
+        val thumbCenterX = progressX.coerceIn(halfThumbW, viewWidth - halfThumbW)
+
         thumbRect.set(
-            progressX - halfThumbW,
+            thumbCenterX - halfThumbW,
             centerY - halfThumbH,
-            progressX + halfThumbW,
+            thumbCenterX + halfThumbW,
             centerY + halfThumbH
         )
         canvas.drawRoundRect(thumbRect, thumbWidth, thumbWidth, thumbPaint)
@@ -253,9 +265,8 @@ class WaveSeekBar @JvmOverloads constructor(
                 repeatCount = ValueAnimator.INFINITE
                 interpolator = null
                 addUpdateListener {
-                    // rotate offset a bit each frame (keeps smooth regardless of value)
-                    waveOffset = (waveOffset + 0.08f) % (2 * Math.PI).toFloat()
-                    // animate amplitude in simple way (can be improved)
+                    // use waveSpeed from XML
+                    waveOffset = (waveOffset + waveSpeed) % (2 * Math.PI).toFloat()
                     currentAmplitude = baseAmplitude
                     invalidate()
                 }
