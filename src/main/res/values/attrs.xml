@@ -38,6 +38,8 @@
         <attr name="wsb_wavelength" format="dimension"/>
         <attr name="wsb_waveEnabled" format="boolean"/>
         <attr name="wsb_waveDuration" format="integer"/>
+        <attr name="wsb_waveSpeed" format="float"/>
+
 
         <!-- Colors -->
         <attr name="wsb_bgColor" format="color"/>
