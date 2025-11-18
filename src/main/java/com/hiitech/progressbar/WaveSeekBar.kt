@@ -9,7 +9,6 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.toColorInt
-import com.hiitech.playme.R
 import kotlin.math.*
 
 class WaveSeekBar @JvmOverloads constructor(
