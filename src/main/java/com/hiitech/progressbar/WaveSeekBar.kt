@@ -4,91 +4,48 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.content.withStyledAttributes
 import kotlin.math.*
+import androidx.core.graphics.toColorInt
+import androidx.core.content.withStyledAttributes
 
 class WaveSeekBar @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
-) : View(context, attrs) {
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
-    // --- Default Values ---
-    private fun dpToPx(dp: Float): Float {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics)
-    }
+    // === DEFAULTS ===
+    private val DEFAULT_BASE_AMPLITUDE = 4f
+    private val DEFAULT_WAVELENGTH_DP = 70f
+    private val DEFAULT_STROKE_WIDTH_DP = 6f
+    private val DEFAULT_THUMB_WIDTH_DP = 10f
+    private val DEFAULT_THUMB_HEIGHT_DP = 50f
+    private val DEFAULT_WAVE_DURATION = 3000 // ms
+    private val DEFAULT_WAVE_ENABLED = true
+    private val DEFAULT_BG_COLOR = "#BDBDBD".toColorInt() // light gray
+    private val DEFAULT_FG_COLOR = Color.BLACK
+    private val DEFAULT_THUMB_COLOR = Color.BLACK
+    private val DEFAULT_MAX = 100
+    private val DEFAULT_PROGRESS = 0
 
-    private val defaultWaveAmplitude = dpToPx(4f)
-    private val defaultWaveWavelength = dpToPx(70f)
-    private val defaultWaveStrokeWidth = dpToPx(6f)
-    private val defaultThumbWidth = dpToPx(10f)
-    private val defaultThumbHeight = dpToPx(50f)
-    private val defaultTrackColor = ContextCompat.getColor(context, R.color.dark_gray_for_seekBar)
-    private val defaultWaveColor = ContextCompat.getColor(context, R.color.black)
-    private val defaultThumbColor = ContextCompat.getColor(context, R.color.black)
+    // === CONFIG (populated from attrs) ===
+    var baseAmplitude = DEFAULT_BASE_AMPLITUDE
+    var wavelength = dpToPx(DEFAULT_WAVELENGTH_DP)
+    var strokeWidth = dpToPx(DEFAULT_STROKE_WIDTH_DP)
+    var thumbWidth = dpToPx(DEFAULT_THUMB_WIDTH_DP)
+    var thumbHeight = dpToPx(DEFAULT_THUMB_HEIGHT_DP)
+    var waveDuration = DEFAULT_WAVE_DURATION
+    var isWaveEnabled = DEFAULT_WAVE_ENABLED
 
-    // === Public Properties ===
-    var waveAmplitude: Float = defaultWaveAmplitude
-        set(value) {
-            field = value
-            if (isWaveRunning) {
-                currentAmplitude = field
-            }
-            invalidate()
-        }
-
-    var waveWavelength: Float = defaultWaveWavelength
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    var waveStrokeWidth: Float = defaultWaveStrokeWidth
-        set(value) {
-            field = value
-            bgPaint.strokeWidth = field
-            fgPaint.strokeWidth = field
-            invalidate()
-        }
-
-    var thumbWidth: Float = defaultThumbWidth
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    var thumbHeight: Float = defaultThumbHeight
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    var trackColor: Int = defaultTrackColor
-        set(value) {
-            field = value
-            bgPaint.color = field
-            invalidate()
-        }
-
-    var waveColor: Int = defaultWaveColor
-        set(value) {
-            field = value
-            fgPaint.color = field
-            invalidate()
-        }
-
-    var thumbColor: Int = defaultThumbColor
-        set(value) {
-            field = value
-            thumbPaint.color = field
-            invalidate()
-        }
+    // colors
+    private var bgColor = DEFAULT_BG_COLOR
+    private var fgColor = DEFAULT_FG_COLOR
+    private var thumbColor = DEFAULT_THUMB_COLOR
 
     // === PROGRESS ===
-    private var _max = 100
-    private var _progress = 0
+    private var _max = DEFAULT_MAX
+    private var _progress = DEFAULT_PROGRESS
     private var isTracking = false
     private var waveOffset = 0f
     private var isWaveRunning = false
@@ -98,24 +55,6 @@ class WaveSeekBar @JvmOverloads constructor(
     private var viewWidth = 0f
     private var viewHeight = 0f
     private var centerY = 0f
-
-    var max: Int
-        get() = _max
-        set(value) {
-            _max = max(1, value) // Must be at least 1
-            progress = _progress.coerceIn(0, _max) // Re-coerce progress
-            invalidate()
-        }
-
-    var progress: Int
-        get() = _progress
-        set(value) {
-            val newVal = value.coerceIn(0, _max)
-            if (newVal != _progress) {
-                _progress = newVal
-                invalidate()
-            }
-        }
 
     // === PAINTS ===
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -132,7 +71,7 @@ class WaveSeekBar @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
 
-    // === REUSABLE OBJECTS (NO ALLOC IN DRAW) ===
+    // === REUSABLE OBJECTS ===
     private val fgPath = Path()
     private val thumbRect = RectF()
 
@@ -147,76 +86,81 @@ class WaveSeekBar @JvmOverloads constructor(
     fun setOnSeekBarChangeListener(l: OnSeekBarChangeListener) {
         listener = l
     }
-    
-    // === INIT ===
-    init {
-        // Read attributes from XML
-        if (attrs != null) {
-            context.withStyledAttributes(attrs, R.styleable.WaveSeekBar) {
-                waveAmplitude = getDimension(R.styleable.WaveSeekBar_wsb_waveAmplitude, defaultWaveAmplitude)
-                waveWavelength = getDimension(R.styleable.WaveSeekBar_wsb_waveWavelength, defaultWaveWavelength)
-                waveStrokeWidth = getDimension(R.styleable.WaveSeekBar_wsb_waveStrokeWidth, defaultWaveStrokeWidth)
-                thumbWidth = getDimension(R.styleable.WaveSeekBar_wsb_thumbWidth, defaultThumbWidth)
-                thumbHeight = getDimension(R.styleable.WaveSeekBar_wsb_thumbHeight, defaultThumbHeight)
-
-                trackColor = getColor(R.styleable.WaveSeekBar_wsb_trackColor, defaultTrackColor)
-                waveColor = getColor(R.styleable.WaveSeekBar_wsb_waveColor, defaultWaveColor)
-                thumbColor = getColor(R.styleable.WaveSeekBar_wsb_thumbColor, defaultThumbColor)
-
-                // Use the 'max' property setter, not the private field
-                max = getInt(R.styleable.WaveSeekBar_wsb_max, 100)
-                // Use the 'progress' property setter
-                progress = getInt(R.styleable.WaveSeekBar_wsb_progress, 0)
-            }
-        }
-
-        // Apply initial values to paints
-        bgPaint.color = trackColor
-        bgPaint.strokeWidth = waveStrokeWidth
-        fgPaint.color = waveColor
-        fgPaint.strokeWidth = waveStrokeWidth
-        thumbPaint.color = thumbColor
-
-        // Set initial amplitude
-        currentAmplitude = if (isWaveRunning) waveAmplitude else 0f
-    }
-
 
     // === ANIMATION ===
     private var waveAnimator: ValueAnimator? = null
 
-    private fun startWaveAnimator() {
-        if (waveAnimator == null) {
-            waveAnimator = ValueAnimator.ofFloat(0f, (2 * Math.PI).toFloat()).apply {
-                duration = 3000L
-                repeatCount = ValueAnimator.INFINITE
-                interpolator = null
-                addUpdateListener {
-                    waveOffset = (waveOffset + 0.08f) % (2 * Math.PI).toFloat()
-                    invalidate()
-                }
+    init {
+        // read attrs
+        attrs?.let {
+            context.withStyledAttributes(it, R.styleable.WaveSeekBar, defStyleAttr, 0) {
+
+                baseAmplitude =
+                    getFloat(R.styleable.WaveSeekBar_wsb_baseAmplitude, DEFAULT_BASE_AMPLITUDE)
+                wavelength = getDimension(
+                    R.styleable.WaveSeekBar_wsb_wavelength,
+                    dpToPx(DEFAULT_WAVELENGTH_DP)
+                )
+                strokeWidth = getDimension(
+                    R.styleable.WaveSeekBar_wsb_strokeWidth,
+                    dpToPx(DEFAULT_STROKE_WIDTH_DP)
+                )
+                thumbWidth = getDimension(
+                    R.styleable.WaveSeekBar_wsb_thumbWidth,
+                    dpToPx(DEFAULT_THUMB_WIDTH_DP)
+                )
+                thumbHeight = getDimension(
+                    R.styleable.WaveSeekBar_wsb_thumbHeight,
+                    dpToPx(DEFAULT_THUMB_HEIGHT_DP)
+                )
+                waveDuration =
+                    getInt(R.styleable.WaveSeekBar_wsb_waveDuration, DEFAULT_WAVE_DURATION)
+                isWaveEnabled =
+                    getBoolean(R.styleable.WaveSeekBar_wsb_waveEnabled, DEFAULT_WAVE_ENABLED)
+
+                bgColor = getColor(R.styleable.WaveSeekBar_wsb_bgColor, DEFAULT_BG_COLOR)
+                fgColor = getColor(R.styleable.WaveSeekBar_wsb_fgColor, DEFAULT_FG_COLOR)
+                thumbColor = getColor(R.styleable.WaveSeekBar_wsb_thumbColor, DEFAULT_THUMB_COLOR)
+
+                _max = getInt(R.styleable.WaveSeekBar_wsb_max, DEFAULT_MAX)
+                _progress = getInt(R.styleable.WaveSeekBar_wsb_progress, DEFAULT_PROGRESS)
+
             }
         }
-        if (!(waveAnimator?.isRunning ?: false)) {
-            waveAnimator?.start()
+
+        // apply to paints
+        bgPaint.color = bgColor
+        bgPaint.strokeWidth = strokeWidth
+
+        fgPaint.color = fgColor
+        fgPaint.strokeWidth = strokeWidth
+
+        thumbPaint.color = thumbColor
+
+        // if wave enabled and progress > 0, start animation
+        if (isWaveEnabled) startWaveAnimator()
+        currentAmplitude = if (isWaveRunning) baseAmplitude else 0f
+    }
+
+    // === PUBLIC PROPERTIES ===
+    var max: Int
+        get() = _max
+        set(value) {
+            _max = max(1, value)
+            if (_progress > _max) _progress = _max
+            invalidate()
         }
-    }
 
-    fun startWaveAnimation() {
-        startWaveAnimator()
-        // Use the public property
-        currentAmplitude = waveAmplitude 
-        isWaveRunning = true
-        invalidate()
-    }
-
-    fun stopWaveAnimation() {
-        waveAnimator?.cancel()
-        waveAnimator = null
-        isWaveRunning = false
-        currentAmplitude = 0f
-        invalidate()
-    }
+    var progress: Int
+        get() = _progress
+        set(value) {
+            val newVal = value.coerceIn(0, _max)
+            if (newVal != _progress) {
+                _progress = newVal
+                listener?.onProgressChanged(this, _progress, false)
+                invalidate()
+            }
+        }
 
     // === LAYOUT ===
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -226,13 +170,13 @@ class WaveSeekBar @JvmOverloads constructor(
         centerY = viewHeight / 2f
     }
 
-    // === DRAWING ===
+    // === DRAW ===
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val progressX = (progress.toFloat() / max) * viewWidth
+        val progressX = if (max == 0) 0f else (progress.toFloat() / max) * viewWidth
 
-        // Draw background
+        // Draw background line from progressX to end
         canvas.drawLine(progressX, centerY, viewWidth, centerY, bgPaint)
 
         // Draw wave (reuse Path)
@@ -240,9 +184,8 @@ class WaveSeekBar @JvmOverloads constructor(
         createWavePath(fgPath, progressX, centerY)
         canvas.drawPath(fgPath, fgPaint)
 
-        // Draw thumb (reuse RectF)
-        // Use public properties
-        val halfThumbW = thumbWidth / 2 
+        // Draw thumb
+        val halfThumbW = thumbWidth / 2
         val halfThumbH = thumbHeight / 2
         thumbRect.set(
             progressX - halfThumbW,
@@ -250,34 +193,22 @@ class WaveSeekBar @JvmOverloads constructor(
             progressX + halfThumbW,
             centerY + halfThumbH
         )
-        // Use thumbWidth for corner radius to make it a perfect pill shape
-        canvas.drawRoundRect(thumbRect, thumbWidth / 2f, thumbWidth / 2f, thumbPaint)
+        canvas.drawRoundRect(thumbRect, thumbWidth, thumbWidth, thumbPaint)
     }
 
     private fun createWavePath(path: Path, width: Float, centerY: Float) {
         val step = 2f
         path.moveTo(0f, centerY)
         var x = 0f
-        
-        // Ensure wavelength is not zero to avoid division by zero
-        val effectiveWavelength = max(1f, waveWavelength)
-        
         while (x <= width) {
-            val y = centerY + currentAmplitude * sin((x / effectiveWavelength) * (2 * Math.PI) + waveOffset)
+            val y = centerY + currentAmplitude * sin((x / wavelength) * (2 * Math.PI) + waveOffset)
             path.lineTo(x, y.toFloat())
             x += step
         }
-        // Ensure the path ends exactly at the thumb position
-        if (x > width && width > 0) {
-             val y = centerY + currentAmplitude * sin((width / effectiveWavelength) * (2 * Math.PI) + waveOffset)
-             path.lineTo(width, y.toFloat())
-        }
     }
 
-    // === TOUCH HANDLING ===
+    // === TOUCH ===
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isEnabled) return false
-        
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 parent.requestDisallowInterceptTouchEvent(true)
@@ -288,18 +219,14 @@ class WaveSeekBar @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (isTracking) {
-                    updateProgress(event.x, true)
-                }
+                updateProgress(event.x, true)
                 return true
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (isTracking) {
-                    updateProgress(event.x, true)
-                    isTracking = false
-                    listener?.onStopTrackingTouch(this)
-                }
+                updateProgress(event.x, true)
+                isTracking = false
+                listener?.onStopTrackingTouch(this)
                 parent.requestDisallowInterceptTouchEvent(false)
                 return true
             }
@@ -310,18 +237,54 @@ class WaveSeekBar @JvmOverloads constructor(
     private fun updateProgress(x: Float, fromUser: Boolean) {
         val fraction = (x / viewWidth).coerceIn(0f, 1f)
         val newProgress = (fraction * _max).toInt()
-        
-        // Check against the 'progress' property, not the private field
-        if (newProgress != progress) {
-            // Use the property setter to update
-            progress = newProgress 
+        if (newProgress != _progress) {
+            _progress = newProgress
             listener?.onProgressChanged(this, _progress, fromUser)
-            // invalidate() is already called by the 'progress' setter
+            invalidate()
         }
+    }
+
+    // === WAVES ===
+    private fun startWaveAnimator() {
+        if (!isWaveEnabled) return
+        if (waveAnimator == null) {
+            waveAnimator = ValueAnimator.ofFloat(0f, (2 * Math.PI).toFloat()).apply {
+                duration = waveDuration.toLong()
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = null
+                addUpdateListener {
+                    // rotate offset a bit each frame (keeps smooth regardless of value)
+                    waveOffset = (waveOffset + 0.08f) % (2 * Math.PI).toFloat()
+                    // animate amplitude in simple way (can be improved)
+                    currentAmplitude = baseAmplitude
+                    invalidate()
+                }
+            }
+        }
+        if (!(waveAnimator?.isRunning ?: false)) waveAnimator?.start()
+        isWaveRunning = true
+    }
+
+    fun startWaveAnimation() {
+        isWaveEnabled = true
+        startWaveAnimator()
+    }
+
+    fun stopWaveAnimation() {
+        waveAnimator?.cancel()
+        waveAnimator = null
+        isWaveRunning = false
+        currentAmplitude = 0f
+        isWaveEnabled = false
+        invalidate()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         stopWaveAnimation()
     }
+
+    // === UTIL ===
+    private fun dpToPx(dp: Float): Float =
+        dp * (resources.displayMetrics.densityDpi.toFloat() / 160f)
 }
